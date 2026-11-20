@@ -1,6 +1,6 @@
 {
-  "name": "sqlite-viewer-local",
-  "displayName": "SQLite Viewer (Local)",
+  "name": "sqlite-peek",
+  "displayName": "SQLite Peek",
   "description": "Free, read-only SQLite viewer for VS Code: browse tables and views, page through rows, and run SQL queries without modifying the file.",
   "icon": "images/icon.png",
   "galleryBanner": {
@@ -30,8 +30,8 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "localSqlite.viewer",
-        "displayName": "SQLite Viewer (Local)",
+        "viewType": "sqlitePeek.viewer",
+        "displayName": "SQLite Peek",
         "selector": [
           {
             "filenamePattern": "*.db"
@@ -60,7 +60,7 @@
     "sql.js": "^1.12.0"
   },
   "scripts": {
-    "package": "npx -y @vscode/vsce@3 package -o sqlite-viewer-local.vsix",
+    "package": "npx -y @vscode/vsce@3 package -o sqlite-peek.vsix",
     "publish": "npx -y @vscode/vsce@3 publish"
   },
   "keywords": [

@@ -217,7 +217,7 @@ class SqliteViewerProvider {
 exports.activate = (context) => {
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
-      "localSqlite.viewer",
+      "sqlitePeek.viewer",
       new SqliteViewerProvider(context),
       { webviewOptions: { retainContextWhenHidden: true }, supportsMultipleEditorsPerDocument: true },
     ),

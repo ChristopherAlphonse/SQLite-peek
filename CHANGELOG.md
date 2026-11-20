@@ -2,7 +2,7 @@
 
 ## 1.0.0
 
-- First Marketplace release.
+- First Marketplace release, renamed to SQLite Peek.
 - New extension icon.
 - Tables whose names start with `sqlite` are no longer hidden from the sidebar.
 - One file watcher per database instead of one per open editor.

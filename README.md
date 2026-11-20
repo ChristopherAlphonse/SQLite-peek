@@ -1,4 +1,4 @@
-# SQLite Viewer (Local)
+# SQLite Peek
 
 A free, read-only SQLite viewer for VS Code. Open any `.db`, `.sqlite`, `.sqlite3`, `.db3`, `.s3db` or `.sl3` file and it opens in a table browser.
 
@@ -18,18 +18,18 @@ Powered by [sql.js](https://github.com/sql-js/sql.js) (SQLite compiled to WebAss
 
 ## Install
 
-Install **SQLite Viewer (Local)** from the VS Code Marketplace, or from the command line:
+Install **SQLite Peek** from the VS Code Marketplace, or from the command line:
 
 ```sh
-code --install-extension christopheralphonse.sqlite-viewer-local
+code --install-extension christopheralphonse.sqlite-peek
 ```
 
 Or install a release build directly:
 
 ```sh
-curl -fsSL -o /tmp/sqlite-viewer-local.vsix \
-  https://github.com/ChristopherAlphonse/sqlite-viewer-local/releases/latest/download/sqlite-viewer-local.vsix \
-  && code --install-extension /tmp/sqlite-viewer-local.vsix --force
+curl -fsSL -o /tmp/sqlite-peek.vsix \
+  https://github.com/ChristopherAlphonse/sqlite-viewer-local/releases/latest/download/sqlite-peek.vsix \
+  && code --install-extension /tmp/sqlite-peek.vsix --force
 ```
 
 ## Limitations
@@ -41,8 +41,8 @@ curl -fsSL -o /tmp/sqlite-viewer-local.vsix \
 
 ```sh
 npm install
-npm run package                     # builds sqlite-viewer-local.vsix
-code --install-extension sqlite-viewer-local.vsix --force
+npm run package                     # builds sqlite-peek.vsix
+code --install-extension sqlite-peek.vsix --force
 ```
 
 Files: `extension.js` opens the database and runs queries; `media/viewer.js` and `media/viewer.css` are the UI.
@@ -54,5 +54,5 @@ Bump `version` in `package.json` and add a `CHANGELOG.md` entry, commit, then:
 ```sh
 npm run package
 VSCE_PAT=<token> npm run publish
-gh release create "v$(node -p 'require("./package.json").version')" sqlite-viewer-local.vsix --generate-notes
+gh release create "v$(node -p 'require("./package.json").version')" sqlite-peek.vsix --generate-notes
 ```
