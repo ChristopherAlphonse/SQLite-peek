@@ -6,3 +6,5 @@ node_modules/**
 images/icon.svg
 media/images/**
 .github/**
+AGENTS.md
+CLAUDE.md
