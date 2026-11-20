@@ -49,13 +49,25 @@ Files: `extension.js` opens the database and runs queries; `media/viewer.js` and
 
 ## Release
 
-Publishing runs in GitHub Actions ([.github/workflows/publish.yml](.github/workflows/publish.yml)) when a `v*` tag is pushed. It signs in with Marketplace Trusted Publishing (GitHub OIDC), so no token is stored. The publisher `christopheralphonse` has a Trusted Publishing policy for owner `ChristopherAlphonse`, repository `sqlite-viewer-local`, workflow `publish.yml`.
-
-Bump `version` in `package.json`, add a `CHANGELOG.md` entry, commit, then:
+Releases come from one GitHub Actions workflow ([.github/workflows/publish.yml](.github/workflows/publish.yml)), so you never bump, tag or write the changelog by hand.
 
 ```sh
-git tag "v$(node -p 'require("./package.json").version')"
-git push origin main --tags
+npm run release          # patch: 1.0.1 -> 1.0.2, then watches the run
+npm run release:minor    # 1.0.1 -> 1.1.0
+npm run release:major    # 1.0.1 -> 2.0.0
 ```
 
-The workflow publishes to the Marketplace and creates a GitHub release with `sqlite-peek.vsix` attached.
+Or open **Actions → Release → Run workflow** on GitHub and pick the bump.
+
+The workflow:
+
+1. Bumps `version` in `package.json` and `package-lock.json`.
+2. Adds a `CHANGELOG.md` entry built from the commit messages since the last tag.
+3. Builds `sqlite-peek.vsix`.
+4. Commits `Release vX.Y.Z`, tags `vX.Y.Z`, and pushes both to `main`.
+5. Publishes to the VS Code Marketplace using Trusted Publishing (GitHub OIDC), so no token is stored.
+6. Creates a GitHub release with the VSIX attached.
+
+Write commit messages as you'd want them in the changelog. Don't edit `version` or push `v*` tags yourself. The run fails if the new tag already exists, and only one release can run at a time.
+
+The Marketplace Trusted Publishing policy on publisher `christopheralphonse` allows owner `ChristopherAlphonse`, repository `sqlite-viewer-local`, workflow `publish.yml`. Renaming the workflow file breaks publishing until the policy is updated.
