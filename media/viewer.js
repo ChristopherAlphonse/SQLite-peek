@@ -8,8 +8,10 @@ const ICONS = {
   key: '<svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="8" r="3"/><path d="M8 8h7M12.5 8v2.5M14.5 8v2"/></svg>',
 };
 
-let current = null; // { table, offset, count }
+let current = null;
 let tableList = [];
+let pageSize = 200;
+let showingQuery = false;
 
 const el = (tag, props = {}, children = []) => {
   const node = Object.assign(document.createElement(tag), props);
@@ -105,6 +107,7 @@ const markActive = (name) => {
 const openTable = (table, offset = 0) => {
   const info = tableList.find((t) => t.name === table);
   current = { table, offset, count: info?.count ?? null, type: info?.type ?? "table" };
+  showingQuery = false;
   markActive(table);
   vscode.postMessage({ type: "page", table, offset });
   vscode.postMessage({ type: "schema", table });
@@ -115,10 +118,12 @@ const runQuery = () => {
   const sql = $("sql").value.trim();
   if (!sql) return;
   current = null;
+  showingQuery = true;
   markActive(null);
   $("pager").hidden = true;
   $("schema").hidden = true;
   $("schemaBtn").hidden = true;
+  $("schemaBtn").classList.remove("on");
   setTitle("Query", []);
   setStatus("Running…");
   vscode.postMessage({ type: "query", sql });
@@ -172,8 +177,8 @@ $("schemaBtn").addEventListener("click", () => {
   $("schema").hidden = !$("schema").hidden;
   $("schemaBtn").classList.toggle("on", !$("schema").hidden);
 });
-$("prev").addEventListener("click", () => current && openTable(current.table, Math.max(0, current.offset - 200)));
-$("next").addEventListener("click", () => current && openTable(current.table, current.offset + 200));
+$("prev").addEventListener("click", () => current && openTable(current.table, Math.max(0, current.offset - pageSize)));
+$("next").addEventListener("click", () => current && openTable(current.table, current.offset + pageSize));
 
 window.addEventListener("message", ({ data: msg }) => {
   switch (msg.type) {
@@ -183,6 +188,7 @@ window.addEventListener("message", ({ data: msg }) => {
       const nTables = msg.tables.filter((t) => t.type === "table").length;
       $("filemeta").textContent = `${fmtBytes(msg.bytes)} · ${nTables} table${nTables === 1 ? "" : "s"}`;
       renderSidebar();
+      if (showingQuery) break;
       const saved = vscode.getState();
       const target = current?.table ?? saved?.table;
       if (target && msg.tables.some((t) => t.name === target)) openTable(target, current?.offset ?? saved?.offset ?? 0);
@@ -192,6 +198,7 @@ window.addEventListener("message", ({ data: msg }) => {
     }
     case "page": {
       if (!current || current.table !== msg.table) return;
+      pageSize = msg.pageSize;
       renderGrid(msg.columns, msg.rows, msg.offset, msg.meta);
       setTitle(msg.table, [
         chip(current.type, "kind"),

@@ -1,18 +1,29 @@
 {
   "name": "sqlite-viewer-local",
   "displayName": "SQLite Viewer (Local)",
-  "description": "Free, read-only SQLite viewer: browse tables and run queries.",
-  "version": "0.2.0",
+  "description": "Free, read-only SQLite viewer for VS Code: browse tables and views, page through rows, and run SQL queries without modifying the file.",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#0b3a7a",
+    "theme": "dark"
+  },
+  "version": "1.0.0",
   "publisher": "local",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ChristopherAlphonse/sqlite-viewer-local"
   },
+  "homepage": "https://github.com/ChristopherAlphonse/sqlite-viewer-local#readme",
+  "bugs": {
+    "url": "https://github.com/ChristopherAlphonse/sqlite-viewer-local/issues"
+  },
   "engines": {
     "vscode": "^1.90.0"
   },
   "categories": [
+    "Data Science",
+    "Visualization",
     "Other"
   ],
   "main": "./extension.js",
@@ -49,6 +60,23 @@
     "sql.js": "^1.12.0"
   },
   "scripts": {
-    "package": "npx -y @vscode/vsce package -o sqlite-viewer-local.vsix"
+    "package": "npx -y @vscode/vsce@3 package -o sqlite-viewer-local.vsix",
+    "publish": "npx -y @vscode/vsce@3 publish"
+  },
+  "keywords": [
+    "sqlite",
+    "sqlite3",
+    "database",
+    "db",
+    "sql",
+    "viewer",
+    "table",
+    "browser"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
   }
 }

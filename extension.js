@@ -31,16 +31,43 @@ class SqliteDocument {
   constructor(uri) {
     this.uri = uri;
     this.db = undefined;
+    this.size = 0;
+    this.reloadEmitter = new vscode.EventEmitter();
+    this.onDidReload = this.reloadEmitter.event;
+    this.watcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(vscode.Uri.joinPath(uri, ".."), path.basename(uri.fsPath)),
+    );
+    this.watcher.onDidChange(() => this.scheduleReload());
+    this.watcher.onDidCreate(() => this.scheduleReload());
   }
+
   async load() {
     const SQL = await loadSql();
     const bytes = await vscode.workspace.fs.readFile(this.uri);
+    const next = new SQL.Database(bytes);
     this.db?.close();
-    this.db = new SQL.Database(bytes);
+    this.db = next;
     this.size = bytes.byteLength;
   }
+
+  scheduleReload() {
+    clearTimeout(this.timer);
+    this.timer = setTimeout(async () => {
+      try {
+        await this.load();
+        this.reloadEmitter.fire(undefined);
+      } catch (err) {
+        this.reloadEmitter.fire(err);
+      }
+    }, 300);
+  }
+
   dispose() {
+    clearTimeout(this.timer);
+    this.watcher.dispose();
+    this.reloadEmitter.dispose();
     this.db?.close();
+    this.db = undefined;
   }
 }
 
@@ -64,7 +91,7 @@ class SqliteViewerProvider {
 
     const sendTables = () => {
       const res = doc.db.exec(
-        "SELECT name, type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY type, name",
+        "SELECT name, type FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite\\_%' ESCAPE '\\' ORDER BY type, name",
       );
       const tables = (res[0]?.values ?? []).map(([name, type]) => {
         let count = null;
@@ -83,11 +110,9 @@ class SqliteViewerProvider {
 
     const handlers = {
       ready: sendTables,
-      page: ({ table, offset }) => {
-        const res = doc.db.exec(
-          `SELECT * FROM ${quoteIdent(table)} LIMIT ${PAGE_SIZE} OFFSET ${Number(offset) || 0}`,
-        );
-        // table_info rows: [cid, name, type, notnull, dflt_value, pk]
+      page: ({ table, offset: rawOffset }) => {
+        const offset = Math.max(0, Math.trunc(Number(rawOffset)) || 0);
+        const res = doc.db.exec(`SELECT * FROM ${quoteIdent(table)} LIMIT ${PAGE_SIZE} OFFSET ${offset}`);
         const info = doc.db.exec(`PRAGMA table_info(${quoteIdent(table)})`)[0]?.values ?? [];
         const meta = Object.fromEntries(info.map((r) => [r[1], { type: r[2], pk: r[5] > 0 }]));
         const columns = res[0]?.columns ?? info.map((r) => r[1]);
@@ -118,38 +143,24 @@ class SqliteViewerProvider {
       },
     };
 
-    panel.webview.onDidReceiveMessage((msg) => {
-      try {
-        handlers[msg.type]?.(msg);
-      } catch (err) {
-        post({ type: "error", message: String(err?.message ?? err) });
-      }
-    });
-
-    // Reload when the file changes on disk (e.g. your app writes to it).
-    const dir = vscode.Uri.joinPath(doc.uri, "..");
-    const watcher = vscode.workspace.createFileSystemWatcher(
-      new vscode.RelativePattern(dir, path.basename(doc.uri.fsPath)),
-    );
-    let timer;
-    const reload = () => {
-      clearTimeout(timer);
-      timer = setTimeout(async () => {
+    const subscriptions = [
+      panel.webview.onDidReceiveMessage((msg) => {
         try {
-          await doc.load();
-          post({ type: "reloaded" });
-          sendTables();
+          handlers[msg?.type]?.(msg);
         } catch (err) {
-          post({ type: "error", message: `Reload failed: ${err?.message ?? err}` });
+          post({ type: "error", message: String(err?.message ?? err) });
         }
-      }, 300);
-    };
-    watcher.onDidChange(reload);
-    watcher.onDidCreate(reload);
-    panel.onDidDispose(() => {
-      clearTimeout(timer);
-      watcher.dispose();
-    });
+      }),
+      doc.onDidReload((err) => {
+        if (err) {
+          post({ type: "error", message: `Reload failed: ${err?.message ?? err}` });
+          return;
+        }
+        post({ type: "reloaded" });
+        sendTables();
+      }),
+    ];
+    panel.onDidDispose(() => subscriptions.forEach((s) => s.dispose()));
   }
 
   html(webview, media) {

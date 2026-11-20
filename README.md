@@ -8,9 +8,23 @@ A free, read-only SQLite viewer for VS Code. Open any `.db`, `.sqlite`, `.sqlite
 - Reloads automatically when the file changes on disk
 - Follows your VS Code theme
 
+![Browsing a table](media/images/browse.png)
+
+![Running a SQL query](media/images/query.png)
+
+![Viewing a table schema](media/images/schema.png)
+
 Powered by [sql.js](https://github.com/sql-js/sql.js) (SQLite compiled to WebAssembly). No native build step.
 
 ## Install
+
+Install **SQLite Viewer (Local)** from the VS Code Marketplace, or from the command line:
+
+```sh
+code --install-extension PUBLISHER.sqlite-viewer-local
+```
+
+Or install a release build directly:
 
 ```sh
 curl -fsSL -o /tmp/sqlite-viewer-local.vsix \
@@ -18,7 +32,10 @@ curl -fsSL -o /tmp/sqlite-viewer-local.vsix \
   && code --install-extension /tmp/sqlite-viewer-local.vsix --force
 ```
 
-Run the same command again to update.
+## Limitations
+
+- The whole file is loaded into memory, so very large databases (multiple GB) may fail to open.
+- Only the main database file is read. Writes still sitting in a `-wal` file show up once SQLite checkpoints them into the main file.
 
 ## Develop
 
@@ -32,9 +49,10 @@ Files: `extension.js` opens the database and runs queries; `media/viewer.js` and
 
 ## Release
 
-Bump `version` in `package.json`, commit, then:
+Bump `version` in `package.json` and add a `CHANGELOG.md` entry, commit, then:
 
 ```sh
 npm run package
+VSCE_PAT=<token> npm run publish
 gh release create "v$(node -p 'require("./package.json").version')" sqlite-viewer-local.vsix --generate-notes
 ```
