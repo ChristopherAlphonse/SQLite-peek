@@ -49,10 +49,13 @@ Files: `extension.js` opens the database and runs queries; `media/viewer.js` and
 
 ## Release
 
-Bump `version` in `package.json` and add a `CHANGELOG.md` entry, commit, then:
+Publishing runs in GitHub Actions ([.github/workflows/publish.yml](.github/workflows/publish.yml)) when a `v*` tag is pushed. It needs a `VSCE_PAT` repository secret holding an Azure DevOps token with the **Marketplace → Manage** scope.
+
+Bump `version` in `package.json`, add a `CHANGELOG.md` entry, commit, then:
 
 ```sh
-npm run package
-VSCE_PAT=<token> npm run publish
-gh release create "v$(node -p 'require("./package.json").version')" sqlite-peek.vsix --generate-notes
+git tag "v$(node -p 'require("./package.json").version')"
+git push origin main --tags
 ```
+
+The workflow publishes to the Marketplace and creates a GitHub release with `sqlite-peek.vsix` attached.

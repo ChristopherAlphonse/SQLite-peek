@@ -1,0 +1,44 @@
+name: Publish
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Check tag matches package.json version
+        run: |
+          version="v$(node -p 'require("./package.json").version')"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package.json $version"
+            exit 1
+          fi
+
+      - name: Publish VS Code Extension
+        id: publish
+        uses: HaaLeo/publish-vscode-extension@v2.1.0
+        with:
+          pat: ${{ secrets.VSCE_PAT }}
+          registryUrl: https://marketplace.visualstudio.com
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "${{ steps.publish.outputs.vsixPath }}" sqlite-peek.vsix
+          gh release create "$GITHUB_REF_NAME" sqlite-peek.vsix --generate-notes
