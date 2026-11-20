@@ -21,7 +21,7 @@ Powered by [sql.js](https://github.com/sql-js/sql.js) (SQLite compiled to WebAss
 Install **SQLite Viewer (Local)** from the VS Code Marketplace, or from the command line:
 
 ```sh
-code --install-extension PUBLISHER.sqlite-viewer-local
+code --install-extension christopheralphonse.sqlite-viewer-local
 ```
 
 Or install a release build directly:
