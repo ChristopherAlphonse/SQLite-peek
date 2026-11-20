@@ -50,7 +50,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          previous="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          previous="$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || true)"
           git log ${previous:+"$previous"..HEAD} --no-merges --pretty='- %s' | grep -v '^- Release v' > notes.md || true
           [ -s notes.md ] || echo "- Maintenance release." > notes.md
           node -e '
