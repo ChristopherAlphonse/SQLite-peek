@@ -49,7 +49,7 @@ Files: `extension.js` opens the database and runs queries; `media/viewer.js` and
 
 ## Release
 
-Publishing runs in GitHub Actions ([.github/workflows/publish.yml](.github/workflows/publish.yml)) when a `v*` tag is pushed. It needs a `VSCE_PAT` repository secret holding an Azure DevOps token with the **Marketplace → Manage** scope.
+Publishing runs in GitHub Actions ([.github/workflows/publish.yml](.github/workflows/publish.yml)) when a `v*` tag is pushed. It signs in with Marketplace Trusted Publishing (GitHub OIDC), so no token is stored. The publisher `christopheralphonse` has a Trusted Publishing policy for owner `ChristopherAlphonse`, repository `sqlite-viewer-local`, workflow `publish.yml`.
 
 Bump `version` in `package.json`, add a `CHANGELOG.md` entry, commit, then:
 

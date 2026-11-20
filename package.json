@@ -60,8 +60,7 @@
     "sql.js": "^1.12.0"
   },
   "scripts": {
-    "package": "npx -y @vscode/vsce@3 package -o sqlite-peek.vsix",
-    "publish": "npx -y @vscode/vsce@3 publish"
+    "package": "npx -y @vscode/vsce@3 package -o sqlite-peek.vsix"
   },
   "keywords": [
     "sqlite",
