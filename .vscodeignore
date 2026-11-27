@@ -8,3 +8,6 @@ media/images/**
 .github/**
 AGENTS.md
 CLAUDE.md
+.codegraph/**
+.opencode/**
+opencode.jsonc
