@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md", ".github/**", ".gitignore", ".codegraph/**", ".opencode/**"]
   workflow_dispatch:
     inputs:
       bump:
@@ -35,35 +38,45 @@ jobs:
 
       - run: npm ci
 
-      - name: Bump version
+      - name: Next version from last v* tag
         id: version
         run: |
-          npm version "${{ inputs.bump }}" --no-git-tag-version
-          version="$(node -p 'require("./package.json").version')"
+          previous="$(git tag -l 'v*' --sort=-version:refname | head -n 1)"
+          version="$(node -e '
+            const [major, minor, patch] = process.argv[1].slice(1).split(".").map(Number);
+            const next = { major: [major + 1, 0, 0], minor: [major, minor + 1, 0], patch: [major, minor, patch + 1] };
+            console.log(next[process.argv[2]].join("."));
+          ' "$previous" "${{ inputs.bump || 'patch' }}")"
           if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
             echo "Tag v$version already exists"
             exit 1
           fi
+          echo "previous=$previous" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      - name: Write changelog entry
+      - name: Write version and changelog
         env:
+          PREVIOUS: ${{ steps.version.outputs.previous }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          previous="$(git describe --tags --abbrev=0 --match "v*" 2>/dev/null || true)"
-          git log ${previous:+"$previous"..HEAD} --no-merges --pretty='- %s' | grep -v '^- Release v' > notes.md || true
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          git log "$PREVIOUS"..HEAD --no-merges --pretty='- %s' | grep -v '^- Release v' > notes.md || true
           [ -s notes.md ] || echo "- Maintenance release." > notes.md
           node -e '
             const fs = require("fs");
-            const notes = fs.readFileSync("notes.md", "utf8").trim();
-            const log = fs.readFileSync("CHANGELOG.md", "utf8");
-            const entry = `## ${process.env.VERSION}\n\n${notes}\n\n`;
-            fs.writeFileSync("CHANGELOG.md", log.replace(/^(# Changelog\n+)/, `$1${entry}`));
+            const { execFileSync } = require("child_process");
+            const git = (...args) => execFileSync("git", args, { encoding: "utf8" }).trim();
+            const released = git("for-each-ref", "refs/tags/v*", "--sort=-version:refname", "--format=%(objecttype) %(refname:short)")
+              .split("\n").filter((line) => line.startsWith("tag ")).map((line) => line.slice(4));
+            const entries = [`## ${process.env.VERSION}\n\n${fs.readFileSync("notes.md", "utf8").trim()}`];
+            for (const tag of released) entries.push(`## ${tag.slice(1)}\n\n${git("tag", "-l", "--format=%(contents:body)", tag)}`);
+            const history = fs.readFileSync("CHANGELOG.md", "utf8").replace(/^# Changelog\n+/, "");
+            fs.writeFileSync("CHANGELOG.md", `# Changelog\n\n${entries.join("\n\n")}\n\n${history}`);
           '
 
       - run: npm run package
 
-      - name: Commit and tag
+      - name: Tag release commit
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -71,11 +84,15 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add package.json package-lock.json CHANGELOG.md
           git commit -m "Release v$VERSION"
-          git tag "v$VERSION"
-          git push origin HEAD:main "v$VERSION"
+          git tag -a "v$VERSION" -m "v$VERSION" -m "$(cat notes.md)"
 
       - name: Publish to VS Code Marketplace
         run: npx vsce publish --oidc --packagePath sqlite-peek.vsix
+
+      - name: Push release tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: git push origin "v$VERSION"
 
       - name: Create GitHub release
         env:
