@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.3
+
+- chore: exclude dev tooling from package
+
+## 1.0.2
+
+- ci: release on push to main and publish before tagging
+
 ## 1.0.1
 
 - feat: add AGENTS.md and CLAUDE.md for documentation; update .vscodeignore and README
